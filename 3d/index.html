@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Swiss Glaciers 3D — GLAMOS SGI2023</title>
+    <script src="https://cesium.com/downloads/cesiumjs/releases/1.125/Build/Cesium/Cesium.js"></script>
+    <link
+      href="https://cesium.com/downloads/cesiumjs/releases/1.125/Build/Cesium/Widgets/widgets.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div id="cesiumContainer"></div>
+
+    <header class="panel top-left">
+      <h1>Swiss Glaciers</h1>
+      <p class="sub">
+        3D terrain · <strong>swissALTI3D</strong> · glaciers ·
+        <strong>GLAMOS SGI2023</strong>
+      </p>
+    </header>
+
+    <aside class="panel top-right">
+      <label class="row">
+        <input type="checkbox" id="toggleGlaciers" checked />
+        Glaciers
+      </label>
+      <label class="row">
+        <input type="checkbox" id="toggleLabels" checked />
+        Labels
+      </label>
+      <label class="row">
+        <span>Exaggeration</span>
+        <input type="range" id="exaggeration" min="1" max="2.5" step="0.1" value="1.2" />
+        <span id="exaggerationValue">1.2×</span>
+      </label>
+      <div class="buttons">
+        <button type="button" id="flyAletsch">Aletsch</button>
+        <button type="button" id="flyMatterhorn">Matterhorn</button>
+        <button type="button" id="flyOverview">Overview</button>
+      </div>
+    </aside>
+
+    <div id="info" class="panel bottom-left hidden">
+      <button type="button" id="closeInfo" aria-label="Close">×</button>
+      <h2 id="infoTitle">Glacier</h2>
+      <dl id="infoBody"></dl>
+    </div>
+
+    <footer class="credit">
+      Terrain © swisstopo · Glaciers GLAMOS SGI2023
+      (doi:10.18750/inventory.sgi2023.r2026)
+    </footer>
+
+    <div id="loading">
+      <div class="spinner"></div>
+      <p>Loading Swiss Alps &amp; glaciers…</p>
+    </div>
+
+    <script src="app.js" type="module"></script>
+  </body>
+</html>

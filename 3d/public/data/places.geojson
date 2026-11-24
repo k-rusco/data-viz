@@ -1,0 +1,20 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {"type":"Feature","properties":{"name":"Interlaken","kind":"town"},"geometry":{"type":"Point","coordinates":[7.8632,46.6863]}},
+    {"type":"Feature","properties":{"name":"Grindelwald","kind":"town"},"geometry":{"type":"Point","coordinates":[8.0414,46.6242]}},
+    {"type":"Feature","properties":{"name":"Wengen","kind":"town"},"geometry":{"type":"Point","coordinates":[7.9215,46.6069]}},
+    {"type":"Feature","properties":{"name":"Mürren","kind":"town"},"geometry":{"type":"Point","coordinates":[7.8925,46.5594]}},
+    {"type":"Feature","properties":{"name":"Meiringen","kind":"town"},"geometry":{"type":"Point","coordinates":[8.1872,46.7274]}},
+    {"type":"Feature","properties":{"name":"Brig","kind":"town"},"geometry":{"type":"Point","coordinates":[7.9876,46.3167]}},
+    {"type":"Feature","properties":{"name":"Visp","kind":"town"},"geometry":{"type":"Point","coordinates":[7.8815,46.2939]}},
+    {"type":"Feature","properties":{"name":"Fiesch","kind":"town"},"geometry":{"type":"Point","coordinates":[8.1353,46.4039]}},
+    {"type":"Feature","properties":{"name":"Belalp","kind":"town"},"geometry":{"type":"Point","coordinates":[7.9744,46.3872]}},
+    {"type":"Feature","properties":{"name":"Zermatt","kind":"town"},"geometry":{"type":"Point","coordinates":[7.7491,46.0207]}},
+    {"type":"Feature","properties":{"name":"Thunersee","kind":"lake"},"geometry":{"type":"Point","coordinates":[7.7167,46.6889]}},
+    {"type":"Feature","properties":{"name":"Lake Brienz","kind":"lake"},"geometry":{"type":"Point","coordinates":[8.0167,46.7167]}},
+    {"type":"Feature","properties":{"name":"Aletsch Glacier","kind":"glacier"},"geometry":{"type":"Point","coordinates":[8.0614,46.5014]}},
+    {"type":"Feature","properties":{"name":"Jungfrau","kind":"peak"},"geometry":{"type":"Point","coordinates":[7.9625,46.5369]}},
+    {"type":"Feature","properties":{"name":"Matterhorn","kind":"peak"},"geometry":{"type":"Point","coordinates":[7.6586,45.9764]}}
+  ]
+}

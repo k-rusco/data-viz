@@ -1,0 +1,245 @@
+:root {
+  --bg: #1a1c1e;
+  --panel: rgba(28, 30, 32, 0.82);
+  --text: #f2f1ee;
+  --muted: #a8a69f;
+  --ice: #6ec6e8;
+  --border: rgba(255, 255, 255, 0.12);
+  --font: "Avenir Next", "Segoe UI", "Helvetica Neue", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  font-family: var(--font);
+  color: var(--text);
+}
+
+#cesiumContainer {
+  width: 100%;
+  height: 100%;
+}
+
+.panel {
+  position: absolute;
+  z-index: 10;
+  background: var(--panel);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+}
+
+.top-left {
+  top: 16px;
+  left: 16px;
+  max-width: min(360px, calc(100vw - 32px));
+}
+
+.top-left h1 {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+
+.top-left .sub {
+  margin: 6px 0 0;
+  font-size: 0.78rem;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.top-left strong {
+  color: var(--ice);
+  font-weight: 600;
+}
+
+.top-right {
+  top: 16px;
+  right: 16px;
+  width: 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.row input[type="range"] {
+  flex: 1;
+  accent-color: var(--ice);
+}
+
+.row input[type="checkbox"] {
+  accent-color: var(--ice);
+}
+
+.buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.buttons button {
+  appearance: none;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 7px 8px;
+  font: inherit;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.buttons button:hover {
+  background: rgba(110, 198, 232, 0.18);
+  border-color: rgba(110, 198, 232, 0.45);
+}
+
+.buttons button:last-child {
+  grid-column: 1 / -1;
+}
+
+.bottom-left {
+  bottom: 44px;
+  left: 16px;
+  width: min(300px, calc(100vw - 32px));
+}
+
+.bottom-left.hidden {
+  display: none;
+}
+
+.bottom-left h2 {
+  margin: 0 28px 8px 0;
+  font-size: 1.05rem;
+}
+
+.bottom-left dl {
+  margin: 0;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 12px;
+  font-size: 0.8rem;
+}
+
+.bottom-left dt {
+  color: var(--muted);
+}
+
+.bottom-left dd {
+  margin: 0;
+}
+
+#closeInfo {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 1.3rem;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.credit {
+  position: absolute;
+  z-index: 10;
+  left: 16px;
+  bottom: 12px;
+  font-size: 0.68rem;
+  color: rgba(255, 255, 255, 0.55);
+  pointer-events: none;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+#loading {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  background: radial-gradient(ellipse at center, #2a2d31 0%, #121314 70%);
+  transition: opacity 0.4s ease, visibility 0.4s ease;
+}
+
+#loading.done {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+#loading p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid rgba(255, 255, 255, 0.12);
+  border-top-color: var(--ice);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.cesium-viewer-bottom,
+.cesium-viewer-toolbar,
+.cesium-viewer-animationContainer,
+.cesium-viewer-timelineContainer,
+.cesium-viewer-fullscreenContainer {
+  display: none !important;
+}
+
+.cesium-viewer-navigationHelpButton-wrapper,
+.cesium-baseLayerPicker-dropDown,
+.cesium-viewer-geocoderContainer,
+.cesium-viewer-homeButton,
+.cesium-viewer-sceneModePicker-wrapper,
+.cesium-viewer-projectionPicker-wrapper,
+.cesium-viewer-baseLayerPicker-wrapper {
+  display: none !important;
+}
+
+@media (max-width: 640px) {
+  .top-right {
+    width: 168px;
+    padding: 12px;
+  }
+
+  .top-left {
+    padding: 10px 12px;
+  }
+
+  .top-left h1 {
+    font-size: 1.1rem;
+  }
+}

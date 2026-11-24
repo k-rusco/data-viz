@@ -1,0 +1,10 @@
+{
+  "name": "swiss-glaciers-3d",
+  "version": "1.0.0",
+  "private": true,
+  "description": "3D visualization of all Swiss glaciers (GLAMOS SGI2023 + swisstopo terrain)",
+  "scripts": {
+    "start": "python3 -m http.server 5173",
+    "serve": "python3 -m http.server 5173"
+  }
+}
