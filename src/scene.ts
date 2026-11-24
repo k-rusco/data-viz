@@ -7,6 +7,8 @@ const ICE = new THREE.Color("#f4f7f8")
 const LOSS = new THREE.Color("#7b0000")
 const GAIN = new THREE.Color("#6d838c")
 const STILL = new THREE.Color("#d5d0c8")
+const MIN_PHI = 0.06
+const MAX_PHI = 1.32
 
 export type SceneHooks = {
   onZoom: (zoom: number) => void
@@ -135,9 +137,14 @@ export class GlacierView {
   private ring: THREE.Mesh
   private raycaster = new THREE.Raycaster()
   private pointer = new THREE.Vector2()
+  private ndc = new THREE.Vector2()
   private plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0)
   private hit = new THREE.Vector3()
+  private grab = new THREE.Vector3()
   private target = new THREE.Vector3()
+  private offset = new THREE.Vector3()
+  private lockId: string | null = null
+  private bounds = { minX: -Infinity, maxX: Infinity, minZ: -Infinity, maxZ: Infinity }
   private shownTarget = new THREE.Vector3()
   private look = new THREE.Vector3()
   private dummy = new THREE.Object3D()
@@ -161,13 +168,16 @@ export class GlacierView {
   private shownYear: number
   private shownRelief = 0
   private userAz = 0
-  private userPhi = 1.02
+  private userTilt = 0
   private az = 0
   private phi = 0.04
   private dist = 48
   private dragging = false
+  private mode: "orbit" | "pan" = "orbit"
   private armed = false
   private moved = false
+  private downX = 0
+  private downY = 0
   private lastX = 0
   private lastY = 0
   private azVel = 0
@@ -249,6 +259,7 @@ export class GlacierView {
     this.resize()
     window.addEventListener("resize", this.resize)
     this.canvas.addEventListener("pointerdown", this.onPointerDown)
+    this.canvas.addEventListener("contextmenu", this.onContextMenu)
     window.addEventListener("pointermove", this.onPointerMove)
     window.addEventListener("pointerup", this.onPointerUp)
     window.addEventListener("wheel", this.onWheel, { passive: false })
@@ -272,7 +283,7 @@ export class GlacierView {
     read.className = "compass-read"
     const hint = document.createElement("p")
     hint.className = "compass-hint"
-    hint.textContent = "Drag to orbit"
+    hint.textContent = "Drag to orbit · Right-drag to pan"
     overlay.compass.append(rotor, read, hint)
     this.compassRotor = rotor
     this.compassLetter = letter
@@ -286,13 +297,49 @@ export class GlacierView {
     if (Math.abs(state.zoom - this.reportedZoom) > 0.0008) {
       this.zoomTarget = state.zoom
       this.reportedZoom = state.zoom
+      if (state.zoom < 0.12) this.recenter()
     }
-    if (entered) this.userPhi = 1.02
+    if (entered) this.userTilt = 0
     if (state.screen === "landing") {
       this.userAz = 0
-      this.userPhi = 1.02
+      this.userTilt = 0
       this.zoomTarget = 0.04
+      this.recenter()
     }
+  }
+
+  private recenter() {
+    this.target.set(0, this.target.y, 0.15)
+    this.offset.set(0, 0, 0)
+  }
+
+  private moveTarget(dx: number, dz: number) {
+    const { minX, maxX, minZ, maxZ } = this.bounds
+    const x = Math.min(maxX, Math.max(minX, this.target.x + dx))
+    const z = Math.min(maxZ, Math.max(minZ, this.target.z + dz))
+    if (this.lockId) {
+      this.offset.x += x - this.target.x
+      this.offset.z += z - this.target.z
+    }
+    this.target.x = x
+    this.target.z = z
+  }
+
+  private groundAt(clientX: number, clientY: number, out: THREE.Vector3) {
+    const rect = this.canvas.getBoundingClientRect()
+    this.ndc.set(((clientX - rect.left) / rect.width) * 2 - 1, -((clientY - rect.top) / rect.height) * 2 + 1)
+    this.raycaster.setFromCamera(this.ndc, this.camera)
+    this.plane.constant = -this.look.y
+    return this.raycaster.ray.intersectPlane(this.plane, out)
+  }
+
+  private baseTilt(zoom: number) {
+    return lerp(0.68, 1.02, smoothstep(0.58, 0.86, zoom))
+  }
+
+  private clampTilt() {
+    const base = this.baseTilt(this.shownZoom)
+    this.userTilt = Math.min(MAX_PHI - base, Math.max(MIN_PHI - base, this.userTilt))
   }
 
   private setZoom(zoom: number) {
@@ -306,6 +353,7 @@ export class GlacierView {
     cancelAnimationFrame(this.frame)
     window.removeEventListener("resize", this.resize)
     this.canvas.removeEventListener("pointerdown", this.onPointerDown)
+    this.canvas.removeEventListener("contextmenu", this.onContextMenu)
     window.removeEventListener("pointermove", this.onPointerMove)
     window.removeEventListener("pointerup", this.onPointerUp)
     window.removeEventListener("wheel", this.onWheel)
@@ -355,6 +403,7 @@ export class GlacierView {
       minZ = Math.min(minZ, z)
       maxZ = Math.max(maxZ, z)
     }
+    this.bounds = { minX, maxX, minZ, maxZ }
     const pad = 0.4
     minX -= pad
     maxX += pad
@@ -535,12 +584,20 @@ export class GlacierView {
     return best
   }
 
+  private onContextMenu = (event: MouseEvent) => {
+    event.preventDefault()
+  }
+
   private onPointerDown = (event: PointerEvent) => {
-    this.armed = true
+    if (this.dragging) return
+    if (event.button === 1) event.preventDefault()
+    const wantsPan = event.button === 1 || event.button === 2 || event.shiftKey || event.ctrlKey || event.metaKey
+    this.mode = wantsPan || this.state.projection === "2d" ? "pan" : "orbit"
+    this.armed = event.button === 0 && !wantsPan
     this.dragging = true
     this.moved = false
-    this.lastX = event.clientX
-    this.lastY = event.clientY
+    this.downX = this.lastX = event.clientX
+    this.downY = this.lastY = event.clientY
     this.azVel = 0
     this.phiVel = 0
   }
@@ -550,27 +607,33 @@ export class GlacierView {
     this.pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1
     this.pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1
     if (!this.dragging) return
-    const dx = event.clientX - this.lastX
-    const dy = event.clientY - this.lastY
-    if (dx * dx + dy * dy > 9) this.moved = true
+    const fromX = this.lastX
+    const fromY = this.lastY
+    const dx = event.clientX - fromX
+    const dy = event.clientY - fromY
     this.lastX = event.clientX
     this.lastY = event.clientY
+    const sx = event.clientX - this.downX
+    const sy = event.clientY - this.downY
+    if (sx * sx + sy * sy > 9) this.moved = true
     if (!this.moved || this.state.screen === "landing") return
-    if (this.state.projection === "3d") {
+    if (this.mode === "orbit") {
       this.userAz -= dx * 0.0055
-      this.userPhi = Math.min(1.38, Math.max(0.28, this.userPhi + dy * 0.0035))
+      this.userTilt += dy * 0.0035
+      this.clampTilt()
       this.azVel = -dx * 0.0004
       this.phiVel = dy * 0.00025
-    } else {
-      const pan = this.dist * 0.0011
-      const sin = Math.sin(this.az)
-      const cos = Math.cos(this.az)
-      this.target.x -= (dx * cos + dy * sin) * pan
-      this.target.z -= (-dx * sin + dy * cos) * pan
+      return
     }
+    if (!this.groundAt(fromX, fromY, this.grab) || !this.groundAt(event.clientX, event.clientY, this.hit)) return
+    this.grab.sub(this.hit)
+    const limit = this.dist * 0.25
+    if (this.grab.lengthSq() > limit * limit) this.grab.setLength(limit)
+    this.moveTarget(this.grab.x, this.grab.z)
   }
 
   private onPointerUp = () => {
+    if (!this.dragging) return
     const wasDrag = this.moved
     const armed = this.armed
     this.dragging = false
@@ -606,12 +669,9 @@ export class GlacierView {
     const mode = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? this.height : 1
     const step = Math.min(0.055, Math.max(-0.055, event.deltaY * mode * 0.00048))
     const next = Math.min(1, Math.max(0, this.zoomTarget + step))
-    if (next < 0.5) {
-      this.raycaster.setFromCamera(this.pointer, this.camera)
-      if (this.raycaster.ray.intersectPlane(this.plane, this.hit)) {
-        const pull = Math.min(0.45, Math.abs(step) * 6)
-        this.target.lerp(this.hit, pull)
-      }
+    if (next !== this.zoomTarget && this.groundAt(event.clientX, event.clientY, this.hit)) {
+      const pull = 1 - Math.pow(6 / 54, next - this.zoomTarget)
+      this.moveTarget((this.hit.x - this.target.x) * pull, (this.hit.z - this.target.z) * pull)
     }
     this.setZoom(next)
   }
@@ -633,40 +693,37 @@ export class GlacierView {
     this.shownRelief = damp(this.shownRelief, reliefGoal, 2.4, dt)
     this.reliefMat.uniforms.uRelief.value = this.shownRelief
 
-    if (!this.dragging && state.projection === "3d" && this.shownZoom < 0.4) {
-      this.userAz = dampAngle(this.userAz, 0, 2.2, dt)
-    }
-    if (!this.dragging) {
+    if (!(this.dragging && this.mode === "orbit")) {
       this.userAz += this.azVel
-      this.userPhi = Math.min(1.38, Math.max(0.28, this.userPhi + this.phiVel))
+      this.userTilt += this.phiVel
       this.azVel *= Math.exp(-3.4 * dt)
       this.phiVel *= Math.exp(-3.4 * dt)
     }
+    this.clampTilt()
 
     const focus = state.glacierId ? this.byId.get(state.glacierId) : undefined
     const zoom = this.shownZoom
-    if (focus && this.zoomTarget > 0.48) {
+    const lockId = focus && this.zoomTarget > 0.48 ? focus.ice.id : null
+    if (lockId !== this.lockId) {
+      this.lockId = lockId
+      this.offset.set(0, 0, 0)
+    }
+    if (focus && lockId) {
       const reach = lengthKm(focus.ice, this.shownYear) / 10
       this.target.set(
-        focus.ice.x + focus.ice.dx * reach * 0.42,
+        focus.ice.x + focus.ice.dx * reach * 0.42 + this.offset.x,
         focus.ice.y * this.shownRelief,
-        focus.ice.z + focus.ice.dz * reach * 0.42,
+        focus.ice.z + focus.ice.dz * reach * 0.42 + this.offset.z,
       )
     } else {
       this.target.y = damp(this.target.y, 0, 2.4, dt)
-      if (landing || this.zoomTarget < 0.12) {
-        this.target.x = damp(this.target.x, 0, 2.2, dt)
-        this.target.z = damp(this.target.z, 0.15, 2.2, dt)
-      }
     }
     this.shownTarget.lerp(this.target, 1 - Math.exp(-3.1 * dt))
 
-    const freedom = smoothstep(0.42, 0.64, zoom)
-    const azGoal = state.projection === "2d" || landing ? 0 : this.userAz
-    const shownAzGoal = state.projection === "3d" && !landing ? lerp(0, azGoal, Math.max(freedom, 0.22)) : 0
-    this.az = dampAngle(this.az, state.projection === "3d" && zoom > 0.5 ? this.userAz : shownAzGoal, 5, dt)
-    const phi3d = lerp(0.68, Math.min(this.userPhi, 1.05), smoothstep(0.58, 0.86, zoom))
-    const phiGoal = state.projection === "2d" || landing ? 0.035 : phi3d
+    const flat = state.projection === "2d" || landing
+    this.az = dampAngle(this.az, flat ? 0 : this.userAz, 5, dt)
+    const phi3d = Math.min(MAX_PHI, Math.max(MIN_PHI, this.baseTilt(zoom) + this.userTilt))
+    const phiGoal = flat ? 0.035 : phi3d
     this.phi = damp(this.phi, phiGoal, 3.6, dt)
     const distGoal = 54 * Math.pow(6 / 54, zoom)
     this.dist = damp(this.dist, distGoal, 3.4, dt)
@@ -860,7 +917,7 @@ export class GlacierView {
         this.hoverId = null
         this.hooks.onHover(null)
       }
-      this.canvas.style.cursor = "default"
+      this.canvas.style.cursor = !this.dragging || !this.moved ? "default" : this.mode === "pan" ? "move" : "grabbing"
       return
     }
     this.raycaster.setFromCamera(this.pointer, this.camera)

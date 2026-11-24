@@ -642,7 +642,7 @@ function Notes({
       )}
       <ul>
         <li>Scroll changes distance. 1–4 jump a level.</li>
-        <li>Drag orbits. A full turn opens on a glacier.</li>
+        <li>Drag orbits. Right-drag or Shift-drag pans.</li>
         <li>V switches 2D and 3D. R draws the rivers.</li>
         <li>Arrows step the year. Space plays the record.</li>
       </ul>
